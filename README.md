@@ -4,7 +4,7 @@ This repository provides training on handling and analyzing GreenFeed data using
 
 ## Course Information
 
-### Introduction to GreenFeedR
+### Introduction to greenfeedr
 **Dates**: 18-21 March, 2025  
 **Lecture**: 10 AM – 11:30 AM, Tuesday  
 **Lab**: 10 AM – 11:30 AM, Friday

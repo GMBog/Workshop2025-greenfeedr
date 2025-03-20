@@ -2,176 +2,233 @@
 ################################################################################
 #                                                                              #
 #                        GreenFeed Workshop 2025                               #
-#                              Laboratory                                      #
+#                 Instructor: Guillermo Martinez-Boggio                        #
 #                                                                              #
 #       greenfeedr: An R Package for Processing & Reporting GreenFeed Data     #
 #                                                                              #
 ################################################################################
 
-# Installation
 
-##Install from CRAN
-install.packages("greenfeedr")
-
-##Install from GitHub
-#install.packages("remotes")
-remotes::install_github("GMBog/greenfeedr", force = TRUE)
-
-# Load libraries
+# Step 0. Installation and Loading Packages -------------------------------------
+ 
+# Install released version from CRAN repository (https://cran.r-project.org/web/packages/greenfeedr/index.html)
+if (!requireNamespace("greenfeedr", quietly = TRUE)) {
+  install.packages("greenfeedr")
+}
 library(greenfeedr)
+packageVersion("greenfeedr")
+
+# Install development version from GitHub (optional) (https://github.com/GMBog/greenfeedr)
+#if (!requireNamespace("remotes", quietly = TRUE)) {
+#  install.packages("remotes")
+#}
+#remotes::install_github("GMBog/greenfeedr", force = TRUE)
+#library(greenfeedr)
+#packageVersion("greenfeedr")
+
 library(dplyr)
-library(emmeans)
 library(ggplot2)
-library(lme4)
-library(purrr)
-library(readr)
-library(readxl)
+
+# -------------------------------------------------------------------------------
+
+# Step 1. Downloading Data ------------------------------------------------------
+
+# Get help on function usage
+?get_gfdata   # Shows documentation if the package is loaded
+??get_gfdata  # Searches for get_gfdata in all installed packages
+
 
 # Set directory
 setwd("/Users/GuillermoMartinez/Documents/Courses/GreenFeed/Workshop 2025/Lab/")
 
-
-## Step 1. Downloading data #####################################################
-
-# Download Raw Data (e.g., feedtimes, rfids, commands)
+# Download raw data ('feedtimes', 'rfids', or 'commands')
+Start_time <- Sys.time()  # Start time
 get_gfdata(user = Sys.getenv("GF_USER"), 
            pass = Sys.getenv("GF_PASS"), 
-           d = "feed", #"rfid", #"cmds"
+           d = "feed",                       #"rfid", #"cmds"
            exp = "EXP1", 
-           unit = c(832,833), #"212"
+           unit = c(304,305),                #"212", "592,593", c("592","593")
+           start_date = "02/12/2024",        #DD/MM/YYYY: "02/12/2024", "2024-12-02"
+           end_date = "06/02/2025",          #DD/MM/YYYY: "06/02/2025", "2025-02-06"
+           save_dir = "Results/")
+elapsed_time <- round(Sys.time() - Start_time, 2)  # Running time
+message("Download completed in ", elapsed_time, " seconds.\n", 
+        "Note: The web interface takes ~16 minutes (~960 seconds) for the same period.")
+
+# Download Preliminary Data
+Start_time <- Sys.time()  # Start time
+get_gfdata(user = Sys.getenv("GF_USER"), 
+           pass = Sys.getenv("GF_PASS"), 
+           #d = "visits",         #By default the function download prelim data ("visits")
+           exp = "EXP1", 
+           unit = 592,
            start_date = "2025-02-02", 
            end_date = "2025-02-06", 
            save_dir = "Results/")
+elapsed_time <- round(Sys.time() - Start_time, 2)  # Running time
+message("Download completed in ", elapsed_time, " seconds.")
 
-# Download Preliminary Data
-get_gfdata(user = Sys.getenv("GF_USER"), 
+
+
+# How to Declare the Order of Arguments in Functions
+
+## Option 1: Named Arguments (Order Does Not Matter)
+get_gfdata(start_date = "2025-02-02", 
+           end_date = "2025-02-06",
+           user = Sys.getenv("GF_USER"), 
            pass = Sys.getenv("GF_PASS"), 
-           #d = "visits",  
-           exp = "EXP1", 
-           unit = c(592,593),
-           start_date = "2025-02-25", 
-           end_date = "2025-03-05", 
-           save_dir = "Results/")
+           #d = "visits",  # By default, the function downloads the emissions ("visits")
+           unit = 592,
+           save_dir = "Results/",
+           exp = "EXP1")
+
+## Option 2: Positional arguments (Order Matters!)
+?get_gfdata # Check the correct order first
+get_gfdata(Sys.getenv("GF_USER"), 
+           Sys.getenv("GF_PASS"), 
+           "visits",   # Try commenting out this argument to see an error message due to incorrect positioning
+           "EXP1", 
+           592,
+           "2025-02-02", 
+           "2025-02-06", 
+           "Results/")
 
 
-#################################################################################
+# -------------------------------------------------------------------------------
 
-## Step 2. Reporting data #######################################################
+# Step 2. Reporting data --------------------------------------------------------
 
+?report_gfdata
 
+# Generate a Final Report in PDF
 
-#################################################################################
+# Set the working directory
+setwd("/Users/GuillermoMartinez/Documents/Courses/GreenFeed/Workshop 2025/Lab/")
 
-## Step 3. Processing data ######################################################
-
-# Read 'finalized' GreenFeed data
-Summarized_Data <- readxl::read_excel("GreenFeed_Summarized_Data.xlsx")
-
-# Change RFID of cows that were changed or lost during the study
-Summarized_Data$RFID <- gsub("^0+", "", Summarized_Data$RFID)
-Summarized_Data$RFID[Summarized_Data$RFID == "840003211748001"] <- "840003268256430"
-Summarized_Data$RFID[Summarized_Data$RFID == "840003211747974"] <- "840003268256431"
-Summarized_Data$RFID[Summarized_Data$RFID == "840003148277091"] <- "840003268256437"
-Summarized_Data$RFID[Summarized_Data$RFID == "840003148277127"] <- "840003268256436"
-Summarized_Data$RFID[Summarized_Data$RFID == "840003205049445"] <- "840003268256439"
-
-
-
-eval <- eval_gfparam(data = data1,
-                     start_date = "2025-01-17",
-                     end_date = "2025-03-07")
+# Run function report gf_data using the finalized data
+report_gfdata(input_type = "final",
+              exp = "EXP1", 
+              unit = c(10, 11), 
+              start_date = "2011-03-13",
+              end_date = "2011-06-21", 
+              save_dir = "Results/", 
+              plot_opt = "All", 
+              rfid_file = "EXP1_EID.xlsx", 
+              file_path = "GreenFeed_Summarized_fData.xlsx")
 
 
-# Description of the results
 
-## How much affect the decision on the number of records per day (param1)?
-scale_factor <- max(data$mean_dCH4) / max(data$CV_dCH4)
-ggplot(data, aes(x = param1)) +
-  # Primary y-axis: daily mean
-  geom_point(aes(y = mean_dCH4, size = records_d, color = "Daily Mean")) +
-  # Secondary y-axis: daily CV (scaled)
-  geom_point(aes(y = CV_dCH4 * scale_factor, size = records_d, color = "Daily CV")) +
-  # Labels and axes
-  labs(
-    title = "",
-    x = "Parameter 1",
-    y = "Daily Mean CH4",
-    size = "Records",
-    color = "Metric"
-  ) +
-  scale_y_continuous(
-    name = "Daily Mean CH4",
-    sec.axis = sec_axis(~ . / scale_factor, name = "Daily CV CH4")
-  ) +
-  # Customize theme
-  theme_minimal() +
-  theme(
-    strip.text = element_text(colour = "white", size = 10),
-    strip.background = element_rect(fill = "grey20", color = "grey20", linewidth = 1),
-    panel.background = element_rect(fill = "white", colour = "grey20"),
-    legend.position = "bottom",  # Ensures size legend remains visible
-    axis.title.y = element_text(size = 12, vjust = 1.5, face = "bold", family = "Times New Roman"),
-    axis.title.y.right = element_text(size = 12, vjust = 1.5, face = "bold", family = "Times New Roman"),
-    axis.text.y = element_text(angle = 0, hjust = 0.5, size = 7, family = "Times New Roman"),
-    axis.text.y.right = element_text(angle = 0, hjust = 0.5, size = 7, family = "Times New Roman"),
-    axis.title.x = element_text(size = 12, vjust = -0.5, face = "bold", family = "Times New Roman"),
-    axis.text.x = element_text(angle = 0, hjust = 0.5, size = 7, family = "Times New Roman")
+# Create a Daily Report in PDF 
+
+## Downloading and Reporting Preliminary Data from a running study
+
+# Set the working directory
+setwd("/Users/GuillermoMartinez/Documents/Projects/Project_UW_GCIGreenFeed/Methane/Studies/FP720/")
+
+# Run function report_gfdata using the preliminary data
+report_gfdata(input_type = "prelim",
+              exp = "EXP1",
+              unit = 716,
+              start_date = "2025-02-10", 
+              #end_date = Sys.Date(),
+              save_dir = "/Users/GuillermoMartinez/Downloads/",
+              plot_opt = "All",
+              rfid_file = "FP720_EID.xlsx",
+              user = Sys.getenv("GF_USER"), 
+              pass = Sys.getenv("GF_PASS"))
+
+
+## Downloading and Reporting Preliminary Data for multiple running studies
+
+# Creating a list of studies to run function report_gfdata in loop
+FID <- list(
+  
+  list(
+    exp = "EXP1",
+    unit = c(579,648),
+    start_date = "2025-02-21",
+    dir = "/Users/GuillermoMartinez/Downloads/"
+  ),
+  
+  list(
+    exp = "EXP2",
+    unit = c(592,593),
+    start_date = "2025-02-20",
+    dir = "/Users/GuillermoMartinez/Downloads/"
   )
-
-## How much affect the decision on the number of records per day (param1) and days with records (param2)?
-ggplot(data, aes(x = param1, y = CV_wCH4, group = param2, color = as.factor(param2))) +
-  # Add line and point layers
-  geom_line() +
-  geom_point(aes(size = records_d)) +  # Size indicates the number of records
-  # Facet the plot by 'min_time' and 'param2'
-  facet_grid(min_time ~ param2) +
-  # Add labels (excluding param2 legend)
-  labs(
-    title = "",
-    x = "Parameter 1",
-    y = "CV Weekly CH4",
-    size = "Records"
-  ) +
-  # Remove the color legend for param2
-  scale_color_discrete(guide = "none") +
-  # Apply minimal theme and customize
-  theme_minimal() +
-  theme(
-    strip.text = element_text(colour = "white", size = 10),
-    strip.background = element_rect(fill = "grey20", color = "grey20", linewidth = 1),
-    panel.background = element_rect(fill = "white", colour = "grey20"),
-    panel.grid.major = element_line(color = "grey80", size = 0.25),  # Enable major gridlines
-    panel.grid.minor = element_line(color = "white", size = 0),  # Enable minor gridlines
-    legend.position = "bottom",  # Ensures size legend remains visible
-    axis.title.y = element_text(size = 12, vjust = 1.5, face = "bold", family = "Times New Roman"),
-    axis.text.y = element_text(angle = 0, hjust = 0.5, size = 7, family = "Times New Roman"),
-    axis.title.x = element_blank(),
-    axis.text.x = element_text(angle = 0, hjust = 0.5, size = 7, family = "Times New Roman")
-  )
-
-
-
-# Now, we can run the process_gfdata with the parameter we decided to use
-Summarized_Data <- greenfeedr::process_gfdata(
-  data = Summarized_Data,
-  start_date = "2023-07-13",
-  end_date = "2023-10-20",
-  param1 = 2,
-  param2 = 3,
-  min_time = 2
+  
 )
 
-daily_data <- Summarized_Data$daily_data
-weekly_data <- Summarized_Data$weekly_data
+for (element in FID) {
+  report_gfdata(input_type = "prelim",
+                exp = element$exp,
+                unit = element$unit,
+                start_date = element$start_date,
+                end_date = Sys.Date(),
+                save_dir = element$dir,
+                plot_opt = "CH4",
+                #rfid_file = element$EID,
+                user = Sys.getenv("GF_USER"),
+                pass = Sys.getenv("GF_PASS"))
+  }
+  
 
-# Join weekly averages with animal information
+# -------------------------------------------------------------------------------
+
+# Step 3. Processing & Analyzing data -------------------------------------------
+
+?process_gfdata
+
+# Set the working directory
+setwd("/Users/GuillermoMartinez/Documents/Courses/GreenFeed/Workshop 2025/Lab/")
+
+# Load the finalized GreenFeed data
+Summarized_Data <- readxl::read_excel("GreenFeed_Summarized_fData.xlsx")
+head(Summarized_Data)             # Display the first few rows of the dataset   
+summary(Summarized_Data[,1:10])   # Generate summary statistics for the first 10 columns
+
+# Load the RFID file containing animal IDs
+EID <- readxl::read_excel("EXP1_EID.xlsx")
+head(EID)                         # Display the first few rows of the RFID data  
+
+# Evaluate what are the best parameters to filter data
+eval <- eval_gfparam(data = Summarized_Data,
+                     start_date = "2011-04-13",
+                     end_date = "2011-06-21")
+
+head(eval, n=20)                  # Display the first 20 rows of the RFID data 
+parameters <- eval[1,]           # Choose your parameters
+
+# Process data using a set of parameters for a specific period
+data <- process_gfdata(data = Summarized_Data,
+                       start_date = "2011-04-13",
+                       end_date = "2011-06-21",
+                       param1 = parameters$param1,
+                       param2 = parameters$param2,
+                       min_time = parameters$min_time
+                       )
+
+# Function returns 3 data frames:
+#1. Summarized data filtered (outliers and low airflow)
+filtered_data <- data$filtered_data
+head(filtered_data)
+
+#2. Daily averages
+daily_data <- data$daily_data
+head(daily_data)
+
+#3. Weekly averages
+weekly_data <- data$weekly_data
+head(weekly_data)
+
+# Merge weekly averages with animal information to filter out animals not in the study
 weekly_data <- weekly_data %>%
-  dplyr::inner_join(list_cows, by = "RFID") %>%
-  dplyr::relocate(FarmName, RFID, Parity, DIM, TRT, CAN, .before = week)
+  dplyr::inner_join(EID, by = "RFID") %>%
+  dplyr::relocate(FarmName, RFID, Parity, DIM, .before = week)
 
-# Description of records across weeks
-table(weekly_data$FarmName, weekly_data$week)
-tapply(weekly_data$nRecords, list(weekly_data$FarmName, weekly_data$week), sum)
+# Get a description of the records per animal and week
+table(weekly_data$RFID, weekly_data$week)
+tapply(weekly_data$nRecords, list(weekly_data$RFID, weekly_data$week), sum)
 
 # Count number of animals keep in data
 length(unique(weekly_data$FarmName))
@@ -188,9 +245,8 @@ weekly_data %>%
                    .groups = 'drop')
 
 
-
 # Fit a linear mixed-effects model
-model <- lmer(CH4GramsPerDay ~ TRT + Parity + DIM + (1 | RFID), data = weekly_data)
+model <- lme4::lmer(CH4GramsPerDay ~ TRT + Parity + DIM + (1 | RFID), data = weekly_data)
 
 # Summarize the model
 summary(model)
@@ -200,10 +256,10 @@ emmeans_results <- emmeans::emmeans(model, pairwise ~ TRT)
 emmeans_results
 
 # Perform ANOVA
-anova_result <- aov(CH4GramsPerDay ~ TRT, data = weekly_data)
+anova_result <- stats::aov(CH4GramsPerDay ~ TRT, data = weekly_data)
 
 # Perform Tukey's HSD test
-tukey_result <- TukeyHSD(anova_result)
+tukey_result <- stats::TukeyHSD(anova_result)
 
 # Extract the TukeyHSD results for plotting
 tukey_data <- as.data.frame(tukey_result$TRT)
@@ -211,229 +267,66 @@ tukey_data$Comparison <- rownames(tukey_data) # Add comparison labels
 rownames(tukey_data) <- NULL
 
 # Plotting using ggplot2
-ggplot(tukey_data, aes(x = Comparison, y = diff)) +
-  geom_bar(stat = "identity", fill = "skyblue") +
-  geom_errorbar(aes(ymin = lwr, ymax = upr), width = 0.2) +
+ggplot(tukey_data, aes(x = Comparison, y = diff, fill = Comparison)) +
+  geom_bar(stat = "identity", show.legend = FALSE) +
+  geom_errorbar(aes(ymin = lwr, ymax = upr), width = 0.2, color = "black") +
   theme_minimal() +
   labs(
     title = "TukeyHSD Results for CH4GramsPerDay",
     x = "Treatment Comparison",
     y = "Mean Difference (CH4GramsPerDay)"
   ) +
+  scale_fill_manual(values = c("#0073C2FF", "#EFC000FF", "#868686FF", "#CD534CFF", 
+                               "#3B3B3BFF", "#8F7700FF", "#D2691EFF", "#56B4E9", "#009E73")) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 
+# -------------------------------------------------------------------------------
 
+# Step 4. Processing Intakes and Visits ----------------------------------------
 
+rm(list = ls()) # initialization
 
-# FILE FOR COMBINING GREENFEED AND SMARTFEED DATA
-# M. Harrison (9/21/24)
+# Set the working directory
+setwd("/Users/GuillermoMartinez/")
 
+##Download raw data and Process pellet intakes
+pellin(user = Sys.getenv("GF_USER"), 
+       pass = Sys.getenv("GF_PASS"), 
+       unit = c(304,305), 
+       gcup = c(42,43,35,36),   #Specify the gcup for each FoodType
+       start_date = "2025-01-02", 
+       end_date = "2025-03-06", 
+       save_dir = "Downloads/",
+       rfid_file = "Documents/Projects/Project_UW_GCIGreenFeed/Methane/Studies/RL06/RL06_EID.xlsx")
 
-# BROUWER EQUATION
-#HP (kJ) = (16.18 x O2 consumption in L) + (5.02 * CO2 Prod in L) - (2.17 x CH4 prod in L)
 
+# Set the working directory
+setwd("/Users/GuillermoMartinez/Documents/Courses/GreenFeed/Workshop 2025/Lab/")
 
-### FILE SET-UP
+##Process pellet intakes from file
+pellin(unit = c(304,305), 
+       gcup = 43, 
+       start_date = "02/12/2024",        
+       end_date = "06/02/2025",
+       save_dir = "/Users/GuillermoMartinez/Downloads/",
+       file_path = "Results/EXP1_feedtimes.csv")
 
-# LOAD PACKAGES
-library(openxlsx)
-library(tidyr)
-library(dplyr)
-library(readxl)
-library(data.table)
-library(tidyverse)
 
+rm(list = ls()) # initialization
 
+# Set the working directory
+setwd("/Users/GuillermoMartinez/Documents/Projects/Project_UW_GCIGreenFeed/Methane/Studies/HCM718/")
 
-# CONVERSION FACTORS
-cup <- 35                     # cup mass in grams from GreenFeed user
-kg <- 2.2                     # conversion for pound to kilo
+# Checking animal visitation to the GreenFeed
+data1 <- viseat(user = Sys.getenv("GF_USER"), 
+               pass = Sys.getenv("GF_PASS"),
+               unit = c(592,593),
+               start_date = "2025-02-21",
+               end_date = "2025-03-14",
+               rfid_file = "HCM718_EID.xlsx"
+              )
 
-ch4.molc.wt <-  16.04         # gas molecular weight for conversion to liters
-co2.molc.wt <- 44.01
-o2.molc.wt <- 32.00
-g_mol <- 22.4                 # conversion factor for g/mol
 
-
-# USER DEFINED PARAMETERS
-fac <- 1.5                       # IQR multiplying factor used "1.5 * IQR"
-period <- 19                    # number of visits needed for inclusion in analysis
-
-
-
-### READ EMISSIONS DATA
-##
-df <- read_excel("/Users/GuillermoMartinez/Documents/Projects/Project_UW_GCIGreenFeed/Methane/Studies/FP707/GreenFeed_Summarized_Data_592_593_2024_09_01_to_2024_10_25.xlsx",
-                 sheet = 1)    # use read xl for dates
-head(df); tail(df)                                                                                # view first and last 6 rows
-
-# prepare data
-colnames(df)=c('RFID','AnimalName','FeederID','StartTime','EndTime','GoodDataDuration','Hour',    # rename columns
-               'CO2GramsPerDay','CH4GramsPerDay','O2GramsPerDay','H2GramsPerDay','H2SGramsPerDay',
-               'AirflowLitersPerSec','AirflowCf','WindSpeedMetersPerSec','WindDirDeg','WindCf',
-               'WasInterrupted','InterruptingTags','MidSinceLast', 'MidUntilNext',
-               'StandDevCH4Base', 'PipeTempDegC','GasTempDegC','RID')
-head(df)                                                                                          # quick check
-
-df$Date= as.Date(df$StartTime)                                                                    # create new column date
-df$Duration= format(as.POSIXct(df$GoodDataDuration), format = "%H:%M:%S"); str(df)                # create new column duration
-
-# define animals as factor based on RFID
-(df$EID= substr(df$RFID, nchar(df$RFID) - 4 + 1, nchar(df$RFID)))                             # define EID as last 4 digits of RFID
-df$EID=as.factor(df$EID); unique(df$EID)                                                      # create EID as a factor and see how many unique ids
-dim(df)                                                                                       # total number of gas observations for all animals; (r X c)
-df$FeederID=as.factor(df$FeederID); unique(df$FeederID)                                       # create FID as a factor and see how many unique ids
-str(df)                                                                                       # data structure
-
-
-
-### ASSESS OUTLIERS AND SUMMARIZE DATA
-# Replace value -999 (denotes sensor error) with NA -- Note all greenfeeds don't have o2 and h2
-df <- df %>%
-    mutate(CO2GramsPerDay  = ifelse(CO2GramsPerDay  == -999, NA, CO2GramsPerDay),
-           CH4GramsPerDay  = ifelse(CH4GramsPerDay  == -999, NA, CH4GramsPerDay),
-           O2GramsPerDay  = ifelse(O2GramsPerDay  == -999, NA, O2GramsPerDay),
-           H2GramsPerDay  = ifelse(H2GramsPerDay  == -999, NA, H2GramsPerDay))
-
-
-# summarize the data set
-unique(df$EID)                                                                          # number of unique animals with methane measurement
-length(df$EID)                                                                          # total number of gas observations for all animals
-dim(df)
-summary(df$CH4GramsPerDay); summary(df$CO2GramsPerDay); summary(df$O2GramsPerDay)      # 5 number summary for CH4, CO2, and O2 visits
-
-
-# visualize data using simple boxplot and set quantiles
-boxplot(df$CH4GramsPerDay, main = "Boxplot CH4", ylab = "(g/d)")$out                   # "$out" outliers from the boxplot listed in output
-(Q.ch4 <- quantile(df$CH4GramsPerDay, probs=c(.25, .75), na.rm = TRUE))                # set quantiles for outliers
-
-boxplot(df$CO2GramsPerDay, main = "Boxplot CO2", ylab = "(g/d)")$out
-(Q.co2 <- quantile(df$CO2GramsPerDay, probs=c(.25, .75), na.rm = TRUE))
-
-boxplot(df$O2GramsPerDay, main = "Boxplot O2", ylab = "(g/d)")$out
-(Q.o2 <- quantile(df$O2GramsPerDay, probs=c(.25, .75), na.rm = TRUE))
-
-boxplot(df$H2GramsPerDay, main = "Boxplot H2", ylab = "(g/d)")$out
-(Q.h2 <- quantile(df$O2GramsPerDay, probs=c(.25, .75), na.rm = TRUE))
-
-# Histograms
-hist(df$CH4GramsPerDay, main = "Histogram CH4", xlab = "CH4 (g/d)")
-hist(df$CO2GramsPerDay, main = "Histogram CO2", xlab = "CO2 (g/d)")                                                                                           # Ch4 histogram
-hist(df$O2GramsPerDay, main = "Histogram O2", xlab = "O2 (g/d)")
-hist(df$O2GramsPerDay, main = "Histogram O2", xlab = "H2 (g/d)")
-
-#
-
-
-### BEGIN OUTLIER ASSESSING
-# calculate IQR
-(IQR.ch4 <- IQR(df$CH4GramsPerDay, na.rm = TRUE))
-(IQR.co2 <- IQR(df$CO2GramsPerDay, na.rm = TRUE))
-(IQR.o2 <- IQR(df$O2GramsPerDay, na.rm = TRUE))
-
-
-# find outliers using IQR and configured fac and subset new data--2 OPTIONS
-
-# OPTION 1- delete entire visit if anything is outlier
-no_out <- subset(df, df$CO2GramsPerDay > (Q.co2[1] - fac*IQR.co2) &  df$CO2GramsPerDay < (Q.co2[2] + fac*IQR.co2))
-no_out <- subset(no_out, no_out$CH4GramsPerDay > (Q.ch4[1] - fac*IQR.ch4) &  no_out$CH4GramsPerDay < (Q.ch4[2] + fac*IQR.ch4))
-no_out <- subset(no_out, no_out$O2GramsPerDay > (Q.o2[1] - fac*IQR.o2) &  no_out$O2GramsPerDay < (Q.o2[2] + fac*IQR.o2))
-
-dim(no_out)                             # deminsions of new reduced sized data set no out
-hist(no_out$CH4GramsPerDay)
-boxplot(no_out$CH4GramsPerDay)$out
-
-
-# OPTION 2- outlier converted to NA to keep other gasses that were not an outlier
-no_out2 <- df %>%
-  mutate(CO2GramsPerDay  = ifelse(CO2GramsPerDay > (Q.co2[1] - fac*IQR.co2) & CO2GramsPerDay < (Q.co2[2] + fac*IQR.co2),  CO2GramsPerDay, NA),
-        CH4GramsPerDay  = ifelse(CH4GramsPerDay  > (Q.ch4[1] - fac*IQR.ch4) & CH4GramsPerDay < (Q.ch4[2] + fac*IQR.ch4), CH4GramsPerDay, NA),
-        O2GramsPerDay  = ifelse(O2GramsPerDay  > (Q.o2[1] - fac*IQR.o2) &  O2GramsPerDay < (Q.o2[2] + fac*IQR.o2), O2GramsPerDay, NA))
-
-dim(no_out2)
-hist(no_out2$CH4GramsPerDay)
-boxplot(no_out2$CH4GramsPerDay)$out
-
-# chose an option I am using option 2 to retain as much data as possible
-
-
-## Visualize and summarize
-# methane
-ggplot(df,aes(x=Date,y=CH4GramsPerDay))+
-  geom_point(aes(color = FeederID)) +
-  geom_smooth(method = 'lm', se = F) +
-  facet_wrap(~AnimalName)+
-  ggtitle('CH4 Observations by GreenFeed Unit')+
-  ylab('CH4 g/d')+  ylim(0,700)+
-  theme_light()+
-  theme(axis.text.x = element_text(angle = -45))
-
-#carbon dioxide
-ggplot(df,aes(x=Date,y=CO2GramsPerDay))+
-  geom_point(aes(color = FeederID)) +
-  geom_smooth(method = 'lm', se = F) +
-  facet_wrap(~AnimalName)+
-  ggtitle('CO2 Observations by GreenFeed Unit')+
-  ylab('CO2 g/d')+  ylim(6000,22000)+
-  theme_light()+
-  theme(axis.text.x = element_text(angle = -45))
-
-
-
-# AVERAGE EMISSIONS DATA (with no outliers)
-
-# creating new data frame with period averages for gas event data
-em_avg <- no_out2 %>% group_by(AnimalName) %>%
-  summarise(Count = n(),
-            unique_days = n_distinct(Date),
-            Mean.CH4 = mean(CH4GramsPerDay, na.rm = TRUE),
-            sd.CH4 = sd(CH4GramsPerDay, na.rm = TRUE),
-            Mean.CO2 = mean(CO2GramsPerDay, na.rm = TRUE),
-            sd.CO2 = sd(CO2GramsPerDay, na.rm = TRUE),
-            Mean.O2 = mean(O2GramsPerDay, na.rm = TRUE),
-            sd.O2 = sd(O2GramsPerDay, na.rm = TRUE),
-  )
-
-head(em_avg); dim(em_avg)
-boxplot(em_avg$Mean.CH4)$out
-
-# generate file all animals and days
-write.xlsx(em_avg, 'Ross All Bulls.xlsx')
-
-
-
-
-# quick stats on visitation
-mean(em_avg$Count); sd(em_avg$Count)        # average visitation per animal
-summary(em_avg$Count)                       # average visitation all animals
-boxplot(em_avg$Count)$out
-
-
-# GENERATE FINAL DATA
-# filter by number of total visits, mist have >20
-em_pheno <- subset(em_avg, em_avg$Count > period)        # subset by number of vis; FINAL DATA SET
-head(em_pheno) ; unique(em_pheno$AnimalName)             # number of head that used it versus used it enough
-
-hist(em_pheno$Mean.CH4, main = "Histogram of Average CH4 by Animal", xlab= "g/d")
-boxplot(em_pheno$Mean.CH4, main = "CH4 Average by Animal")$out
-
-hist(em_pheno$Mean.CO2, main = "Histogram of Average CO2 by Animal", xlab= "g/d")
-boxplot(em_pheno$Mean.CO2, main = "CO2 Average by Animal")$out
-
-hist(em_pheno$Mean.O2, main = "Histogram of Average O2 by Animal", xlab= "g/d")
-boxplot(em_pheno$Mean.O2, main = "O2 Average by Animal")$out
-
-
-# calculate as L per day for RQ and HP
-(em_pheno$CH4_L = (em_pheno$Mean.CH4 * g_mol)/ ch4.molc.wt)
-(em_pheno$CO2_L = (em_pheno$Mean.CO2 * g_mol)/ co2.molc.wt)
-(em_pheno$O2_L = (em_pheno$Mean.O2 * g_mol)/ o2.molc.wt)
-(em_pheno$RQ = em_pheno$CO2_L/em_pheno$O2_L)
-em_pheno$HP = (16.18*em_pheno$O2_L) + (5.02 *em_pheno$CO2_L) - (2.17*em_pheno$CH4_L)
-
-
-
-
-
+# -------------------------------------------------------------------------------
 

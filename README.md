@@ -1,4 +1,4 @@
-# greenfeedr R Package Trining Session
+# greenfeedr R-Package Training Session
 
 This repository provides training on handling and analyzing GreenFeed data using the **greenfeedr** R-package. The course is designed for individuals with prior experience with the GreenFeed system who want to master the usage of the **greenfeedr** package and gain hands-on training in processing GreenFeed data.
 

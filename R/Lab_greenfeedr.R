@@ -33,6 +33,11 @@ library(ggplot2)
 
 # Step 1. Downloading Data ------------------------------------------------------
 
+# How to set up your user and password in your R environment for authentication:
+#Sys.setenv(USERNAME = "your_username")
+#Sys.setenv(PASSWORD = "your_password")
+# To persist your credentials across R sessions, you can store them in the .Renviron file in your home directory.
+
 # Get help on function usage
 ?get_gfdata   # Shows documentation if the package is loaded
 ??get_gfdata  # Searches for get_gfdata in all installed packages
@@ -260,6 +265,7 @@ anova_result <- stats::aov(CH4GramsPerDay ~ TRT, data = weekly_data)
 
 # Perform Tukey's HSD test
 tukey_result <- stats::TukeyHSD(anova_result)
+tukey_result
 
 # Extract the TukeyHSD results for plotting
 tukey_data <- as.data.frame(tukey_result$TRT)
@@ -272,9 +278,9 @@ ggplot(tukey_data, aes(x = Comparison, y = diff, fill = Comparison)) +
   geom_errorbar(aes(ymin = lwr, ymax = upr), width = 0.2, color = "black") +
   theme_minimal() +
   labs(
-    title = "TukeyHSD Results for CH4GramsPerDay",
-    x = "Treatment Comparison",
-    y = "Mean Difference (CH4GramsPerDay)"
+    title = "TukeyHSD Results for Methane",
+    x = "",
+    y = "Mean CH4 (g/d) Difference"
   ) +
   scale_fill_manual(values = c("#0073C2FF", "#EFC000FF", "#868686FF", "#CD534CFF", 
                                "#3B3B3BFF", "#8F7700FF", "#D2691EFF", "#56B4E9", "#009E73")) +
@@ -288,6 +294,18 @@ ggplot(tukey_data, aes(x = Comparison, y = diff, fill = Comparison)) +
 rm(list = ls()) # initialization
 
 # Set the working directory
+setwd("/Users/GuillermoMartinez/Documents/Courses/GreenFeed/Workshop 2025/Lab/")
+
+##Process pellet intakes from file
+pellin(unit = c(304,305), 
+       gcup = 43, 
+       start_date = "02/12/2024",        
+       end_date = "06/02/2025",
+       save_dir = "Results/",
+       file_path = "Results/EXP1_feedtimes.csv")
+
+
+# Set the working directory
 setwd("/Users/GuillermoMartinez/")
 
 ##Download raw data and Process pellet intakes
@@ -299,18 +317,6 @@ pellin(user = Sys.getenv("GF_USER"),
        end_date = "2025-03-06", 
        save_dir = "Downloads/",
        rfid_file = "Documents/Projects/Project_UW_GCIGreenFeed/Methane/Studies/RL06/RL06_EID.xlsx")
-
-
-# Set the working directory
-setwd("/Users/GuillermoMartinez/Documents/Courses/GreenFeed/Workshop 2025/Lab/")
-
-##Process pellet intakes from file
-pellin(unit = c(304,305), 
-       gcup = 43, 
-       start_date = "02/12/2024",        
-       end_date = "06/02/2025",
-       save_dir = "/Users/GuillermoMartinez/Downloads/",
-       file_path = "Results/EXP1_feedtimes.csv")
 
 
 rm(list = ls()) # initialization

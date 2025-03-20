@@ -1,4 +1,11 @@
+# Ignore RStudio project-specific files
 .Rproj.user
 .Rhistory
 .RData
 .Ruserdata
+
+# Ignore environment and credential files
+.Renviron
+credentials.txt
+*.key
+*.env

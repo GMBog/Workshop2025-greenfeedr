@@ -1,9 +1,19 @@
-# Ignore everything
-*
+# Ignore RStudio project-specific files
+.Rproj.user
+.project
+.Rhistory
+.RData
+.Ruserdata
 
-# Except these directories
-!Lab/
-!R/
+# Ignore sensitive files
+config.yml
+secrets.env
+.env
+*.key
+*.pem
+database_credentials.json
 
-# Allow .gitignore itself
-!.gitignore
+# Ignore temporary and backup files
+*.log
+*.tmp
+*.bak

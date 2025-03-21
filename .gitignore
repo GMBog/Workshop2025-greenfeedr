@@ -17,3 +17,6 @@ database_credentials.json
 *.log
 *.tmp
 *.bak
+
+# Ignore macOS system files
+.DS_Store

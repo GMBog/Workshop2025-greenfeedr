@@ -1,5 +1,6 @@
 # Ignore RStudio project-specific files
 .Rproj.user
+.project
 .Rhistory
 .RData
 .Ruserdata

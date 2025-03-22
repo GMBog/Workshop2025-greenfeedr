@@ -19,13 +19,14 @@ library(greenfeedr)
 packageVersion("greenfeedr")
 
 # Install development version from GitHub (optional) (https://github.com/GMBog/greenfeedr)
-#if (!requireNamespace("remotes", quietly = TRUE)) {
-#  install.packages("remotes")
-#}
-#remotes::install_github("GMBog/greenfeedr", force = TRUE)
-#library(greenfeedr)
-#packageVersion("greenfeedr")
+if (!requireNamespace("remotes", quietly = TRUE)) {
+ install.packages("remotes")
+}
+remotes::install_github("GMBog/greenfeedr", force = TRUE)
+library(greenfeedr)
+packageVersion("greenfeedr")
 
+# Load extra packages to use in this script
 library(dplyr)
 library(ggplot2)
 
@@ -42,14 +43,13 @@ library(ggplot2)
 ?get_gfdata   # Shows documentation if the package is loaded
 ??get_gfdata  # Searches for get_gfdata in all installed packages
 
-
 # Set directory
 setwd("/Users/GuillermoMartinez/Documents/Courses/GreenFeed/Workshop 2025/Lab/")
 
 # Download raw data ('feedtimes', 'rfids', or 'commands')
 Start_time <- Sys.time()  # Start time
-get_gfdata(user = Sys.getenv("GF_USER"), 
-           pass = Sys.getenv("GF_PASS"), 
+get_gfdata(user = Sys.getenv("GF_USER"), # Replace 'Sys.getenv("GF_USER")' by "your_username"
+           pass = Sys.getenv("GF_PASS"), # Replace 'Sys.getenv("GF_USER")' by "your_password"
            d = "feed",                       #"rfid", #"cmds"
            exp = "EXP1", 
            unit = c(304,305),                #"212", "592,593", c("592","593")
@@ -92,9 +92,9 @@ get_gfdata(start_date = "2025-02-02",
 get_gfdata(Sys.getenv("GF_USER"), 
            Sys.getenv("GF_PASS"), 
            "visits",   # Try commenting out this argument to see an error message due to incorrect positioning
-           "EXP1", 
+           "EXP1",
            592,
-           "2025-02-02", 
+           "2025-02-02",
            "2025-02-06", 
            "Results/")
 
@@ -149,6 +149,8 @@ report_gfdata(input_type = "prelim",
 FID <- list(
   
   list(
+    user = "guillermo",
+    pass = "gf1992",
     exp = "EXP1",
     unit = c(579,648),
     start_date = "2025-02-21",
@@ -156,6 +158,8 @@ FID <- list(
   ),
   
   list(
+    user = "guillermo2",
+    pass = "gf1993",
     exp = "EXP2",
     unit = c(592,593),
     start_date = "2025-02-20",
@@ -173,8 +177,8 @@ for (element in FID) {
                 save_dir = element$dir,
                 plot_opt = "CH4",
                 #rfid_file = element$EID,
-                user = Sys.getenv("GF_USER"),
-                pass = Sys.getenv("GF_PASS"))
+                user = element$user,
+                pass = element$pass)
   }
   
 
@@ -297,12 +301,12 @@ rm(list = ls()) # initialization
 setwd("/Users/GuillermoMartinez/Documents/Courses/GreenFeed/Workshop 2025/Lab/")
 
 ##Process pellet intakes from file
-pellin(unit = c(304,305), 
+pellin(unit = c(10,11), 
        gcup = 43, 
-       start_date = "02/12/2024",        
-       end_date = "06/02/2025",
+       start_date = "02/08/2012",        
+       end_date = "06/10/2012",
        save_dir = "Results/",
-       file_path = "Results/EXP1_feedtimes.csv")
+       file_path = "Results/EXP1_feedtimes.xlsx")
 
 
 # Set the working directory
